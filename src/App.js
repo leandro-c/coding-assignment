@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Routes,
   Route,
@@ -9,6 +9,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import "reactjs-popup/dist/index.css";
 import { fetchMovies } from "./data/moviesSlice";
+import useInfiniteScroll from "./hooks/useInfiniteScroll.js";
 import {
   ENDPOINT_SEARCH,
   ENDPOINT_DISCOVER,
@@ -23,7 +24,7 @@ import TrailerModal from "./components/TrailerModal";
 import "./app.scss";
 
 const App = () => {
-  const state = useSelector((state) => state);
+  const state = useSelector((state) => state.movies);
   const { movies } = state;
   const dispatch = useDispatch();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -31,6 +32,7 @@ const App = () => {
   const [videoKey, setVideoKey] = useState();
   const [isOpen, setOpen] = useState(false);
   const navigate = useNavigate();
+  const [page, setPage] = useState(1);
 
   const closeModal = () => setOpen(false);
 
@@ -38,12 +40,15 @@ const App = () => {
 
   const getSearchResults = (query) => {
     if (query !== "") {
-      dispatch(fetchMovies(`${ENDPOINT_SEARCH}&query=` + query));
+      dispatch(
+        fetchMovies({ apiUrl: `${ENDPOINT_SEARCH}&query=` + query, page: 1 })
+      );
       setSearchParams(createSearchParams({ search: query }));
     } else {
-      dispatch(fetchMovies(ENDPOINT_DISCOVER));
+      dispatch(fetchMovies({ apiUrl: ENDPOINT_DISCOVER, page: 1 }));
       setSearchParams();
     }
+    setPage(1);
   };
 
   const searchMovies = (query) => {
@@ -54,13 +59,31 @@ const App = () => {
   const getMovies = () => {
     if (searchQuery) {
       const url = `${ENDPOINT_SEARCH}&query=` + encodeURIComponent(searchQuery);
-      console.log("Fetching movies from URL:", url);
-      dispatch(fetchMovies(url));
+      dispatch(fetchMovies({ apiUrl: url, page: 1 }));
     } else {
-      console.log("Fetching movies from URL:", ENDPOINT_DISCOVER);
-      dispatch(fetchMovies(ENDPOINT_DISCOVER));
+      dispatch(fetchMovies({ apiUrl: ENDPOINT_DISCOVER, page: 1 }));
     }
+    setPage(1);
   };
+
+  const loadMoreMovies = useCallback(() => {
+    const nextPage = page + 1;
+    if (searchQuery) {
+      const url = `${ENDPOINT_SEARCH}&query=${encodeURIComponent(
+        searchQuery
+      )}&page=${nextPage}`;
+      return dispatch(fetchMovies({ apiUrl: url, page: nextPage })).then(() =>
+        setPage(nextPage)
+      );
+    } else {
+      const url = `${ENDPOINT_DISCOVER}&page=${nextPage}`;
+      return dispatch(fetchMovies({ apiUrl: url, page: nextPage })).then(() =>
+        setPage(nextPage)
+      );
+    }
+  }, [dispatch, searchQuery, page]);
+
+  const [isFetching] = useInfiniteScroll(loadMoreMovies);
 
   const viewTrailer = (movie) => {
     getMovie(movie.id);
@@ -124,6 +147,7 @@ const App = () => {
         onRequestClose={closeModal}
         videoKey={videoKey}
       />
+      {isFetching && <p>Loading more movies...</p>}
     </div>
   );
 };
