@@ -19,7 +19,7 @@ import Header from "./components/Header";
 import Movies from "./components/Movies";
 import Starred from "./components/Starred";
 import WatchLater from "./components/WatchLater";
-import YouTubePlayer from "./components/YoutubePlayer";
+import TrailerModal from "./components/TrailerModal";
 import "./app.scss";
 
 const App = () => {
@@ -64,7 +64,6 @@ const App = () => {
 
   const viewTrailer = (movie) => {
     getMovie(movie.id);
-    if (!videoKey) setOpen(true);
     setOpen(true);
   };
 
@@ -95,14 +94,6 @@ const App = () => {
       />
 
       <div className="container">
-        {videoKey ? (
-          <YouTubePlayer videoKey={videoKey} />
-        ) : (
-          <div style={{ padding: "30px" }}>
-            <h6>no trailer available. Try another movie</h6>
-          </div>
-        )}
-
         <Routes>
           <Route
             path="/"
@@ -128,6 +119,11 @@ const App = () => {
           />
         </Routes>
       </div>
+      <TrailerModal
+        isOpen={isOpen}
+        onRequestClose={closeModal}
+        videoKey={videoKey}
+      />
     </div>
   );
 };
