@@ -14,6 +14,7 @@ const TrailerModal = ({ isOpen, onRequestClose, videoKey }) => {
       </button>
       <div className="iframe-container">
         <iframe
+          data-testid="youtube-player"
           src={`https://www.youtube.com/embed/${videoKey}`}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
